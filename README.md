@@ -1,13 +1,13 @@
 # Chat Application with History
 
-A modern chat application built with Django backend and React frontend, featuring conversation history and GitHub API integration.
+A modern chat application built with Django backend and React frontend, featuring conversation history and GitHub AI integration.
 
 ## Features
 
 - 💬 Real-time chat interface
 - 📚 Conversation history with persistent storage
 - 🎨 Modern, responsive UI
-- 🔍 GitHub API integration for context-aware responses
+- 🔍 GitHub AI integration for context-aware responses
 - 🗑️ Delete conversations
 - 📱 Mobile-friendly design
 
@@ -17,7 +17,7 @@ A modern chat application built with Django backend and React frontend, featurin
 - **Django 4.2.7** - Web framework
 - **Django REST Framework** - API framework
 - **SQLite** - Database (can be configured for PostgreSQL)
-- **GitHub API** - For LLM responses and context
+- **GitHub AI** - For LLM responses and context
 
 ### Frontend
 - **React 18** - UI framework
@@ -34,7 +34,7 @@ A modern chat application built with Django backend and React frontend, featurin
 ### 1. Clone the Repository
 ```bash
 git clone <your-repo-url>
-cd axa_rag
+cd enterprise_knowledge_chatbot
 ```
 
 ### 2. Backend Setup
@@ -52,7 +52,7 @@ cp env.example .env
 
 2. Edit `.env` file and add your credentials:
 ```env
-# LLM Configuration
+# LLM Configuration (GitHub AI)
 GITHUB_TOKEN=your_github_token_here
 
 # Django Configuration
