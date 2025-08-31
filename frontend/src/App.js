@@ -82,6 +82,23 @@ function App() {
     }
   };
 
+  const submitFeedback = async (messageId, feedbackType, rating = null, comment = '') => {
+    try {
+      await axios.post(`${API_BASE_URL}/conversations/${currentConversation.id}/feedback/`, {
+        message_id: messageId,
+        feedback_type: feedbackType,
+        rating: rating,
+        comment: comment
+      });
+      
+      // Refresh conversation to show updated feedback count
+      await fetchConversation(currentConversation.id);
+      await fetchConversations();
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+    }
+  };
+
   const deleteConversation = async (conversationId, e) => {
     e.stopPropagation();
     try {
@@ -109,6 +126,41 @@ function App() {
     });
   };
 
+  const FeedbackButtons = ({ message }) => {
+    if (message.role !== 'assistant') return null;
+
+    return (
+      <div className="feedback-buttons">
+        <button
+          className="feedback-btn thumbs-up"
+          onClick={() => submitFeedback(message.id, 'thumbs_up')}
+          title="Thumbs up"
+        >
+          👍
+        </button>
+        <button
+          className="feedback-btn thumbs-down"
+          onClick={() => submitFeedback(message.id, 'thumbs_down')}
+          title="Thumbs down"
+        >
+          👎
+        </button>
+        <button
+          className="feedback-btn rating"
+          onClick={() => {
+            const rating = prompt('Rate this response (1-5):');
+            if (rating && rating >= 1 && rating <= 5) {
+              submitFeedback(message.id, 'rating', parseInt(rating));
+            }
+          }}
+          title="Rate response"
+        >
+          ⭐
+        </button>
+      </div>
+    );
+  };
+
   return (
     <div className="app">
       {/* Sidebar */}
@@ -132,6 +184,9 @@ function App() {
               <div className="conversation-title">{conversation.title}</div>
               <div className="conversation-meta">
                 {conversation.message_count} messages • {formatTime(conversation.updated_at)}
+                {conversation.feedback_count > 0 && (
+                  <span className="feedback-indicator"> • {conversation.feedback_count} feedback</span>
+                )}
                 <button
                   className="delete-btn"
                   onClick={(e) => deleteConversation(conversation.id, e)}
@@ -158,6 +213,7 @@ function App() {
                   <div className="message-content">
                     {msg.content}
                     <div className="message-time">{formatTime(msg.created_at)}</div>
+                    <FeedbackButtons message={msg} />
                   </div>
                 </div>
               ))}

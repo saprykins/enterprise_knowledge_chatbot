@@ -101,6 +101,11 @@ code {
   color: #6c757d;
 }
 
+.feedback-indicator {
+  color: #28a745;
+  font-weight: 500;
+}
+
 .main-content {
   flex: 1;
   display: flex;
@@ -146,6 +151,7 @@ code {
   border-radius: 12px;
   font-size: 14px;
   line-height: 1.5;
+  position: relative;
 }
 
 .message.user .message-content {
@@ -165,6 +171,51 @@ code {
   font-size: 11px;
   color: #6c757d;
   margin-top: 4px;
+}
+
+.feedback-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  justify-content: flex-end;
+}
+
+.feedback-btn {
+  background: none;
+  border: 1px solid #e9ecef;
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+}
+
+.feedback-btn:hover {
+  background-color: #f8f9fa;
+  border-color: #007bff;
+}
+
+.feedback-btn.thumbs-up:hover {
+  background-color: #d4edda;
+  border-color: #28a745;
+  color: #28a745;
+}
+
+.feedback-btn.thumbs-down:hover {
+  background-color: #f8d7da;
+  border-color: #dc3545;
+  color: #dc3545;
+}
+
+.feedback-btn.rating:hover {
+  background-color: #fff3cd;
+  border-color: #ffc107;
+  color: #856404;
 }
 
 .chat-input {
