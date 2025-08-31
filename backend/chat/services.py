@@ -1,23 +1,26 @@
 import os
-import openai
 import requests
 import json
 from typing import List, Dict, Any
 
 
 class LLMService:
-    """Service for interacting with OpenAI API for LLM responses."""
+    """Service for interacting with GitHub AI models."""
     
     def __init__(self):
-        self.openai_api_key = os.getenv('OPENAI_API_KEY')
         self.github_token = os.getenv('GITHUB_TOKEN')
         
-        if self.openai_api_key:
-            self.client = openai.OpenAI(api_key=self.openai_api_key)
-        else:
-            self.client = None
-            
+        # GitHub AI Configuration
+        self.endpoint = "https://models.github.ai/inference"
+        self.model = "openai/gpt-4.1-nano"  # You can change this model
+        
         self.headers = {
+            'Authorization': f'Bearer {self.github_token}',
+            'Content-Type': 'application/json',
+            'User-Agent': 'chat-app'
+        } if self.github_token else {}
+        
+        self.github_api_headers = {
             'Authorization': f'token {self.github_token}',
             'Accept': 'application/vnd.github.v3+json'
         } if self.github_token else {}
@@ -25,10 +28,10 @@ class LLMService:
         self.system_prompt = "You are a helpful AI assistant. Be very concise in your responses. You can access GitHub data for context when relevant."
     
     def generate_response(self, messages: List[Dict[str, str]]) -> str:
-        """Generate a response using OpenAI API."""
+        """Generate a response using GitHub AI models."""
         try:
-            if not self.client:
-                return "Error: OpenAI API key not configured. Please set OPENAI_API_KEY in your environment."
+            if not self.github_token:
+                return "Error: GitHub token not configured. Please set GITHUB_TOKEN in your environment."
             
             # Add system message at the beginning if not present
             if not messages or messages[0].get('role') != 'system':
@@ -41,7 +44,7 @@ class LLMService:
                     last_user_message = msg['content']
                     break
             
-            if last_user_message and self.github_token:
+            if last_user_message:
                 github_context = self._get_github_context(last_user_message)
                 if github_context:
                     # Add GitHub context to the conversation
@@ -50,14 +53,27 @@ class LLMService:
                         'content': f"GitHub context: {github_context}"
                     })
             
-            response = self.client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=messages,
-                max_tokens=200,  # Keep responses concise
-                temperature=0.7
+            # Prepare the request payload
+            payload = {
+                "model": self.model,
+                "messages": messages,
+                "temperature": 1,
+                "top_p": 1,
+                "max_tokens": 200
+            }
+            
+            response = requests.post(
+                f"{self.endpoint}/v1/chat/completions",
+                headers=self.headers,
+                json=payload,
+                timeout=30
             )
             
-            return response.choices[0].message.content.strip()
+            if response.status_code == 200:
+                data = response.json()
+                return data['choices'][0]['message']['content'].strip()
+            else:
+                return f"Error: API returned status {response.status_code}: {response.text}"
             
         except Exception as e:
             return f"Error generating response: {str(e)}"
@@ -71,7 +87,7 @@ class LLMService:
             if any(keyword in message.lower() for keyword in ['code', 'repository', 'project', 'github', 'repo']):
                 response = requests.get(
                     'https://api.github.com/search/repositories',
-                    headers=self.headers,
+                    headers=self.github_api_headers,
                     params={'q': 'stars:>1000', 'sort': 'stars', 'per_page': 3}
                 )
                 if response.status_code == 200:
@@ -87,7 +103,7 @@ class LLMService:
             if any(keyword in message.lower() for keyword in ['issue', 'problem', 'bug', 'error', 'fix']):
                 response = requests.get(
                     'https://api.github.com/search/issues',
-                    headers=self.headers,
+                    headers=self.github_api_headers,
                     params={'q': 'state:open', 'sort': 'created', 'per_page': 3}
                 )
                 if response.status_code == 200:
@@ -105,22 +121,34 @@ class LLMService:
             return None
     
     def generate_conversation_title(self, first_message: str) -> str:
-        """Generate a title for the conversation using OpenAI."""
+        """Generate a title for the conversation using GitHub AI."""
         try:
-            if not self.client:
+            if not self.github_token:
                 return self._generate_simple_title(first_message)
             
-            response = self.client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
+            payload = {
+                "model": self.model,
+                "messages": [
                     {'role': 'system', 'content': 'Generate a very short title (max 5 words) for this conversation.'},
                     {'role': 'user', 'content': first_message}
                 ],
-                max_tokens=20,
-                temperature=0.3
+                "temperature": 1,
+                "top_p": 1,
+                "max_tokens": 20
+            }
+            
+            response = requests.post(
+                f"{self.endpoint}/v1/chat/completions",
+                headers=self.headers,
+                json=payload,
+                timeout=30
             )
             
-            return response.choices[0].message.content.strip()
+            if response.status_code == 200:
+                data = response.json()
+                return data['choices'][0]['message']['content'].strip()
+            else:
+                return self._generate_simple_title(first_message)
             
         except Exception as e:
             return self._generate_simple_title(first_message)
@@ -148,16 +176,30 @@ class LLMService:
     
     def get_model_info(self) -> str:
         """Get information about the current model being used."""
-        if not self.client:
-            return "No OpenAI API key configured"
+        if not self.github_token:
+            return "No GitHub token configured"
         
         try:
             # Test the API connection
-            response = self.client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[{'role': 'user', 'content': 'Hello'}],
-                max_tokens=10
+            payload = {
+                "model": self.model,
+                "messages": [{'role': 'user', 'content': 'Hello'}],
+                "temperature": 1,
+                "top_p": 1,
+                "max_tokens": 10
+            }
+            
+            response = requests.post(
+                f"{self.endpoint}/v1/chat/completions",
+                headers=self.headers,
+                json=payload,
+                timeout=30
             )
-            return f"OpenAI GPT-3.5-turbo (API working)"
+            
+            if response.status_code == 200:
+                return f"GitHub AI {self.model} (API working)"
+            else:
+                return f"GitHub AI API Error: Status {response.status_code}"
+                
         except Exception as e:
-            return f"OpenAI API Error: {str(e)}"
+            return f"GitHub AI API Error: {str(e)}"

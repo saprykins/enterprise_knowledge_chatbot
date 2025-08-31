@@ -1,18 +1,20 @@
-# LLM Setup Guide
+# GitHub AI LLM Setup Guide
 
 ## 🔍 **Issue Identified**
 
-The chat application is currently using a basic keyword-based response system instead of a real LLM. Here's how to fix it:
+The chat application is currently using a basic keyword-based response system instead of a real LLM. Here's how to fix it with GitHub AI models:
 
 ## 🚀 **Quick Fix Steps**
 
-### 1. **Get OpenAI API Key**
+### 1. **Get GitHub Token**
 
-1. Go to [OpenAI Platform](https://platform.openai.com/)
-2. Sign up or log in
-3. Go to "API Keys" section
-4. Create a new API key
-5. Copy the key (it starts with `sk-`)
+1. Go to [GitHub Settings](https://github.com/settings/tokens)
+2. Click "Generate new token (classic)"
+3. Give it a name like "Chat App AI"
+4. Select scopes:
+   - `public_repo` (for repository access)
+   - `read:user` (for user information)
+5. Copy the token
 
 ### 2. **Configure Environment**
 
@@ -20,14 +22,13 @@ The chat application is currently using a basic keyword-based response system in
 # Copy the example environment file
 cp env.example .env
 
-# Edit the .env file and add your OpenAI API key
+# Edit the .env file and add your GitHub token
 nano .env
 ```
 
-Add your OpenAI API key to the `.env` file:
+Add your GitHub token to the `.env` file:
 ```env
-# LLM Configuration
-OPENAI_API_KEY=sk-your-actual-api-key-here
+# LLM Configuration (GitHub AI)
 GITHUB_TOKEN=your_github_token_here
 
 # Django Configuration
@@ -44,9 +45,9 @@ python test_llm.py
 
 You should see:
 ```
-OpenAI API Key configured: ✅ Yes
-Status: OpenAI GPT-3.5-turbo (API working)
-Response: [Actual GPT response]
+GitHub Token configured: ✅ Yes
+Status: GitHub AI openai/gpt-4.1-nano (API working)
+Response: [Actual AI response]
 ```
 
 ## 🔧 **Current Status**
@@ -59,7 +60,7 @@ Response: [Actual GPT response]
 - GitHub API integration
 
 ### ❌ **What's Not Working:**
-- **LLM Responses** - Currently using keyword matching instead of GPT
+- **LLM Responses** - Currently using keyword matching instead of GitHub AI
 - **Model Information** - Can't identify which model is being used
 
 ## 🧪 **Testing the LLM**
@@ -93,46 +94,51 @@ curl -X POST -H "Content-Type: application/json" \
 - No real AI understanding
 - Can't identify the model
 
-### **After (With OpenAI):**
+### **After (With GitHub AI):**
 - Intelligent, contextual responses
-- Can explain what model it is (GPT-3.5-turbo)
+- Can explain what model it is (openai/gpt-4.1-nano)
 - Can answer complex questions
 - GitHub context integration
 
 ## 💰 **Cost Information**
 
-- **OpenAI GPT-3.5-turbo**: ~$0.002 per 1K tokens
-- **Typical chat response**: ~100-200 tokens
-- **Estimated cost per conversation**: ~$0.0004-0.0008
+- **GitHub AI Models**: Free for GitHub users
+- **Model**: openai/gpt-4.1-nano (fast and efficient)
+- **No additional costs** for using GitHub AI
 
 ## 🔒 **Security Notes**
 
-1. **Never commit your API key** to Git
+1. **Never commit your GitHub token** to Git
 2. The `.env` file is already in `.gitignore`
 3. Use environment variables in production
 
-## 🚀 **Alternative LLM Options**
+## 🚀 **Available Models**
 
-If you don't want to use OpenAI, you can modify `backend/chat/services.py` to use:
+You can change the model in `backend/chat/services.py`:
 
-1. **Local Models** (Ollama, LM Studio)
-2. **Other APIs** (Anthropic Claude, Google Gemini)
-3. **Open Source Models** (Llama, Mistral)
+```python
+self.model = "openai/gpt-4.1-nano"  # Current model
+# Other options:
+# "openai/gpt-4o-mini"
+# "openai/gpt-4o"
+# "anthropic/claude-3-5-sonnet"
+# "meta-llama/llama-3.1-8b-instruct"
+```
 
 ## 📞 **Support**
 
 If you need help:
 1. Check the test script output
-2. Verify your API key is correct
-3. Ensure you have sufficient OpenAI credits
+2. Verify your GitHub token is correct
+3. Ensure you have access to GitHub AI models
 4. Check the server logs for errors
 
 ## 🎉 **Next Steps**
 
-1. Get your OpenAI API key
+1. Get your GitHub token
 2. Add it to the `.env` file
 3. Run `python test_llm.py` to verify
 4. Start the application with `./start.sh`
 5. Test the chat functionality
 
-The application will then provide intelligent, contextual responses using GPT-3.5-turbo!
+The application will then provide intelligent, contextual responses using GitHub AI models!

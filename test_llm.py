@@ -22,14 +22,12 @@ from chat.services import LLMService
 
 def test_llm():
     """Test the LLM service."""
-    print("🔍 Testing LLM Service...")
+    print("🔍 Testing GitHub AI LLM Service...")
     print("=" * 50)
     
     # Check environment variables
-    openai_key = os.getenv('OPENAI_API_KEY')
     github_token = os.getenv('GITHUB_TOKEN')
     
-    print(f"OpenAI API Key configured: {'✅ Yes' if openai_key else '❌ No'}")
     print(f"GitHub Token configured: {'✅ Yes' if github_token else '❌ No'}")
     print()
     
@@ -40,6 +38,8 @@ def test_llm():
     print("📊 Model Information:")
     model_info = llm_service.get_model_info()
     print(f"Status: {model_info}")
+    print(f"Endpoint: {llm_service.endpoint}")
+    print(f"Model: {llm_service.model}")
     print()
     
     # Test response generation
