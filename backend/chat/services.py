@@ -1,147 +1,163 @@
 import os
+import openai
 import requests
 import json
-import random
 from typing import List, Dict, Any
 
 
 class LLMService:
-    """Service for interacting with GitHub API for LLM responses."""
+    """Service for interacting with OpenAI API for LLM responses."""
     
     def __init__(self):
+        self.openai_api_key = os.getenv('OPENAI_API_KEY')
         self.github_token = os.getenv('GITHUB_TOKEN')
+        
+        if self.openai_api_key:
+            self.client = openai.OpenAI(api_key=self.openai_api_key)
+        else:
+            self.client = None
+            
         self.headers = {
             'Authorization': f'token {self.github_token}',
             'Accept': 'application/vnd.github.v3+json'
-        }
-        self.system_prompt = "Be very concise in your responses."
+        } if self.github_token else {}
+        
+        self.system_prompt = "You are a helpful AI assistant. Be very concise in your responses. You can access GitHub data for context when relevant."
     
     def generate_response(self, messages: List[Dict[str, str]]) -> str:
-        """Generate a response using GitHub API context."""
+        """Generate a response using OpenAI API."""
         try:
-            user_messages = [msg for msg in messages if msg.get('role') == 'user']
-            if not user_messages:
-                return "Hello! How can I help you today?"
+            if not self.client:
+                return "Error: OpenAI API key not configured. Please set OPENAI_API_KEY in your environment."
             
-            last_user_message = user_messages[-1]['content'].lower()
+            # Add system message at the beginning if not present
+            if not messages or messages[0].get('role') != 'system':
+                messages.insert(0, {'role': 'system', 'content': self.system_prompt})
             
-            # Use GitHub API to get relevant context if available
-            if self.github_token:
-                # Try to get relevant GitHub data for context
-                context = self._get_github_context(last_user_message)
-                if context:
-                    return f"Based on GitHub data: {context}"
+            # Get GitHub context if available and relevant
+            last_user_message = None
+            for msg in reversed(messages):
+                if msg.get('role') == 'user':
+                    last_user_message = msg['content']
+                    break
             
-            # Fallback to keyword-based responses
-            return self._generate_keyword_response(last_user_message)
-                
+            if last_user_message and self.github_token:
+                github_context = self._get_github_context(last_user_message)
+                if github_context:
+                    # Add GitHub context to the conversation
+                    messages.insert(1, {
+                        'role': 'system', 
+                        'content': f"GitHub context: {github_context}"
+                    })
+            
+            response = self.client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=messages,
+                max_tokens=200,  # Keep responses concise
+                temperature=0.7
+            )
+            
+            return response.choices[0].message.content.strip()
+            
         except Exception as e:
             return f"Error generating response: {str(e)}"
     
     def _get_github_context(self, message: str) -> str:
         """Get relevant context from GitHub API."""
         try:
+            context_parts = []
+            
             # Search for repositories related to the message
-            if any(keyword in message for keyword in ['code', 'repository', 'project', 'github']):
+            if any(keyword in message.lower() for keyword in ['code', 'repository', 'project', 'github', 'repo']):
                 response = requests.get(
                     'https://api.github.com/search/repositories',
                     headers=self.headers,
-                    params={'q': 'stars:>1000', 'sort': 'stars', 'per_page': 1}
+                    params={'q': 'stars:>1000', 'sort': 'stars', 'per_page': 3}
                 )
                 if response.status_code == 200:
                     data = response.json()
                     if data.get('items'):
-                        repo = data['items'][0]
-                        return f"Popular repo: {repo['name']} - {repo['description']}"
+                        repos = data['items'][:3]
+                        repo_info = []
+                        for repo in repos:
+                            repo_info.append(f"{repo['name']}: {repo['description']}")
+                        context_parts.append(f"Popular repositories: {'; '.join(repo_info)}")
             
             # Search for issues if the message mentions problems
-            if any(keyword in message for keyword in ['issue', 'problem', 'bug', 'error']):
+            if any(keyword in message.lower() for keyword in ['issue', 'problem', 'bug', 'error', 'fix']):
                 response = requests.get(
                     'https://api.github.com/search/issues',
                     headers=self.headers,
-                    params={'q': 'state:open', 'sort': 'created', 'per_page': 1}
+                    params={'q': 'state:open', 'sort': 'created', 'per_page': 3}
                 )
                 if response.status_code == 200:
                     data = response.json()
                     if data.get('items'):
-                        issue = data['items'][0]
-                        return f"Recent issue: {issue['title']}"
+                        issues = data['items'][:3]
+                        issue_info = []
+                        for issue in issues:
+                            issue_info.append(f"{issue['title']}")
+                        context_parts.append(f"Recent issues: {'; '.join(issue_info)}")
             
-            return None
+            return ' '.join(context_parts) if context_parts else None
             
         except Exception:
             return None
     
-    def _generate_keyword_response(self, message: str) -> str:
-        """Generate response based on keywords."""
-        responses = {
-            'hello': ["Hello! How can I assist you?", "Hi there! What can I help with?"],
-            'weather': ["I can't check real-time weather, but I can help with other questions."],
-            'help': ["I'm here to help! What would you like to know?"],
-            'github': ["GitHub is a great platform for code collaboration. What specific GitHub question do you have?"],
-            'code': ["I can help with coding questions. What language or framework are you working with?"],
-            'api': ["APIs are essential for modern development. What API are you working with?"],
-            'database': ["Databases are crucial for data storage. What database system are you using?"],
-            'deploy': ["Deployment can be complex. What platform are you deploying to?"],
-            'test': ["Testing is important for code quality. What type of testing are you doing?"],
-            'security': ["Security is critical. What security concern do you have?"]
-        }
-        
-        for keyword, response_list in responses.items():
-            if keyword in message:
-                return random.choice(response_list)
-        
-        # Default responses for questions
-        if '?' in message:
-            return random.choice([
-                "That's an interesting question. Let me think about it briefly.",
-                "I'd be happy to help with that. Could you provide more details?",
-                "Good question! What specific aspect would you like to explore?"
-            ])
-        
-        return random.choice([
-            "I understand. Please tell me more about what you need.",
-            "Thanks for sharing. How can I assist you further?",
-            "Got it. What would you like to work on next?"
-        ])
-    
     def generate_conversation_title(self, first_message: str) -> str:
-        """Generate a title for the conversation based on the first message."""
+        """Generate a title for the conversation using OpenAI."""
         try:
-            message_lower = first_message.lower()
+            if not self.client:
+                return self._generate_simple_title(first_message)
             
-            # Use GitHub API to get more context if available
-            if self.github_token and any(keyword in message_lower for keyword in ['github', 'repo', 'code']):
-                try:
-                    response = requests.get(
-                        'https://api.github.com/search/repositories',
-                        headers=self.headers,
-                        params={'q': 'stars:>1000', 'sort': 'stars', 'per_page': 1}
-                    )
-                    if response.status_code == 200:
-                        data = response.json()
-                        if data.get('items'):
-                            return f"GitHub: {data['items'][0]['name']}"
-                except:
-                    pass
+            response = self.client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {'role': 'system', 'content': 'Generate a very short title (max 5 words) for this conversation.'},
+                    {'role': 'user', 'content': first_message}
+                ],
+                max_tokens=20,
+                temperature=0.3
+            )
             
-            # Keyword-based titles
-            if 'weather' in message_lower:
-                return "Weather inquiry"
-            elif 'help' in message_lower:
-                return "Help request"
-            elif 'migration' in message_lower or 'oracle' in message_lower:
-                return "Migration to Oracle"
-            elif 'latency' in message_lower or 'performance' in message_lower:
-                return "Latency issue"
-            elif 'github' in message_lower:
-                return "GitHub discussion"
-            elif 'code' in message_lower or 'programming' in message_lower:
-                return "Code discussion"
-            elif '?' in first_message:
-                return "Question"
-            else:
-                return "New conversation"
-                
+            return response.choices[0].message.content.strip()
+            
         except Exception as e:
+            return self._generate_simple_title(first_message)
+    
+    def _generate_simple_title(self, first_message: str) -> str:
+        """Fallback title generation based on keywords."""
+        message_lower = first_message.lower()
+        
+        if 'weather' in message_lower:
+            return "Weather inquiry"
+        elif 'help' in message_lower:
+            return "Help request"
+        elif 'migration' in message_lower or 'oracle' in message_lower:
+            return "Migration to Oracle"
+        elif 'latency' in message_lower or 'performance' in message_lower:
+            return "Latency issue"
+        elif 'github' in message_lower:
+            return "GitHub discussion"
+        elif 'code' in message_lower or 'programming' in message_lower:
+            return "Code discussion"
+        elif '?' in first_message:
+            return "Question"
+        else:
             return "New conversation"
+    
+    def get_model_info(self) -> str:
+        """Get information about the current model being used."""
+        if not self.client:
+            return "No OpenAI API key configured"
+        
+        try:
+            # Test the API connection
+            response = self.client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[{'role': 'user', 'content': 'Hello'}],
+                max_tokens=10
+            )
+            return f"OpenAI GPT-3.5-turbo (API working)"
+        except Exception as e:
+            return f"OpenAI API Error: {str(e)}"

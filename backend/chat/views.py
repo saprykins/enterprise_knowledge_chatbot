@@ -7,6 +7,20 @@ from .serializers import ConversationSerializer, ConversationListSerializer, Mes
 from .services import LLMService
 
 
+@api_view(['GET'])
+def llm_status(request):
+    """Check LLM service status and model information."""
+    llm_service = LLMService()
+    model_info = llm_service.get_model_info()
+    
+    return Response({
+        'status': 'ok' if 'API working' in model_info else 'error',
+        'model_info': model_info,
+        'openai_configured': llm_service.client is not None,
+        'github_configured': bool(llm_service.github_token)
+    })
+
+
 @api_view(['GET', 'POST'])
 def conversation_list(request):
     """List all conversations or create a new one."""
