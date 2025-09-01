@@ -1,30 +1,27 @@
 #!/bin/bash
 
-# Start the Django backend server
-echo "Starting Django backend server..."
+# Start Redis (if not already running)
+echo "Starting Redis..."
+redis-server --daemonize yes 2>/dev/null || echo "Redis already running or not available"
+
+# Start Celery worker
+echo "Starting Celery worker..."
 cd backend
+celery -A chat_app worker --loglevel=info &
+CELERY_PID=$!
+
+# Start Django backend
+echo "Starting Django backend..."
 python manage.py runserver &
-BACKEND_PID=$!
+DJANGO_PID=$!
 
-# Wait a moment for backend to start
-sleep 3
-
-# Start the React frontend server
-echo "Starting React frontend server..."
+# Start React frontend
+echo "Starting React frontend..."
 cd ../frontend
 npm start &
-FRONTEND_PID=$!
+REACT_PID=$!
 
-echo "Both servers are starting..."
-echo "Backend: http://localhost:8000"
-echo "Frontend: http://localhost:3000"
-echo ""
-echo "Press Ctrl+C to stop both servers"
-
-# Wait for user to stop the servers
-wait $BACKEND_PID $FRONTEND_PID
-
-# Cleanup on exit
-echo "Stopping servers..."
-kill $BACKEND_PID 2>/dev/null
-kill $FRONTEND_PID 2>/dev/null
+# Wait for all processes
+echo "All services started. Press Ctrl+C to stop all services."
+trap "echo 'Stopping services...'; kill $CELERY_PID $DJANGO_PID $REACT_PID; exit" INT
+wait

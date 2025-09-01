@@ -1,34 +1,39 @@
-# Chat Application with History
+# Chat Application with RAG (Retrieval-Augmented Generation)
 
-A modern chat application built with Django backend and React frontend, featuring conversation history and GitHub AI integration.
+A modern chat application built with Django backend and React frontend, featuring conversation history, GitHub AI integration, and **RAG (Retrieval-Augmented Generation)** for company knowledge management.
 
-## Features
+## 🚀 Features
 
-- 💬 Real-time chat interface
-- 📚 Conversation history with persistent storage
-- 🎨 Modern, responsive UI
-- 🔍 GitHub AI integration for context-aware responses
-- 🗑️ Delete conversations
-- 📱 Mobile-friendly design
+- 💬 **Real-time chat interface** with conversation history
+- 📚 **RAG System** - Upload and query company documents
+- 🎨 **Modern, responsive UI** with admin interface
+- 🔍 **GitHub AI integration** for context-aware responses
+- 🗑️ **Delete conversations** and manage data sources
+- 📱 **Mobile-friendly design**
+- 🔄 **Async document processing** with Celery
+- 📊 **Analytics and feedback** system
 
-## Tech Stack
+## 🏗️ Architecture
 
-### Backend
+### Backend (Django + LangChain)
 - **Django 4.2.7** - Web framework
 - **Django REST Framework** - API framework
-- **SQLite** - Database (can be configured for PostgreSQL)
-- **GitHub AI** - For LLM responses and context
+- **LangChain** - RAG orchestration
+- **ChromaDB** - Vector database
+- **Celery + Redis** - Async task processing
+- **SQLite** - Relational database
 
-### Frontend
+### Frontend (React)
 - **React 18** - UI framework
 - **Axios** - HTTP client
-- **CSS3** - Styling
+- **CSS3** - Modern styling
 
-## Setup Instructions
+## 📋 Setup Instructions
 
 ### Prerequisites
 - Python 3.8+
 - Node.js 16+
+- Redis (for Celery)
 - GitHub Personal Access Token
 
 ### 1. Clone the Repository
@@ -41,6 +46,10 @@ cd enterprise_knowledge_chatbot
 
 #### Install Python Dependencies
 ```bash
+# Activate virtual environment
+source venv/bin/activate
+
+# Install dependencies
 pip install -r requirements.txt
 ```
 
@@ -61,6 +70,10 @@ DEBUG=True
 
 # Database Configuration (optional - defaults to SQLite)
 DATABASE_URL=sqlite:///db.sqlite3
+
+# Celery Configuration (for async document processing)
+CELERY_BROKER_URL=redis://localhost:6379/0
+CELERY_RESULT_BACKEND=redis://localhost:6379/0
 ```
 
 #### Database Setup
@@ -75,13 +88,6 @@ python manage.py migrate
 python manage.py createsuperuser
 ```
 
-#### Run Backend Server
-```bash
-python manage.py runserver
-```
-
-The backend will be available at `http://localhost:8000`
-
 ### 3. Frontend Setup
 
 #### Install Node.js Dependencies
@@ -90,14 +96,48 @@ cd frontend
 npm install
 ```
 
-#### Run Frontend Development Server
+### 4. Start All Services
+
+#### Option 1: Use the start script
 ```bash
+chmod +x start.sh
+./start.sh
+```
+
+#### Option 2: Start manually
+```bash
+# Terminal 1: Start Redis
+redis-server
+
+# Terminal 2: Start Celery worker
+cd backend
+celery -A chat_app worker --loglevel=info
+
+# Terminal 3: Start Django backend
+cd backend
+python manage.py runserver
+
+# Terminal 4: Start React frontend
+cd frontend
 npm start
 ```
 
-The frontend will be available at `http://localhost:3000`
+## 🎯 Usage
 
-## API Endpoints
+### Chat Interface
+1. Open the application at `http://localhost:3000`
+2. Toggle "Use company data" to enable RAG
+3. Start a conversation - the AI will use company documents when available
+4. View conversation history in the sidebar
+
+### Admin Interface
+1. Click "Admin" button in the sidebar
+2. **Upload Documents**: Drag & drop PDF files
+3. **Manage Data Sources**: Toggle active/inactive sources
+4. **View Statistics**: Monitor RAG system performance
+5. **Delete Sources**: Remove documents from the knowledge base
+
+## 🔧 API Endpoints
 
 ### Conversations
 - `GET /api/conversations/` - List all conversations
@@ -106,7 +146,41 @@ The frontend will be available at `http://localhost:3000`
 - `POST /api/conversations/{id}/` - Add message to conversation
 - `DELETE /api/conversations/{id}/delete/` - Delete conversation
 
-## GitHub Token Setup
+### RAG System
+- `GET /api/data-sources/` - List all data sources
+- `POST /api/data-sources/` - Upload new document
+- `PUT /api/data-sources/{id}/` - Update data source (toggle active)
+- `DELETE /api/data-sources/{id}/` - Delete data source
+- `GET /api/rag-stats/` - Get RAG system statistics
+- `GET /api/conversations/{id}/rag-queries/` - Get RAG query history
+
+### Feedback
+- `POST /api/conversations/{id}/feedback/` - Submit user feedback
+- `GET /api/conversations/{id}/feedback/list/` - Get conversation feedback
+
+## 🧠 RAG System Details
+
+### How it Works
+1. **Document Upload**: PDF files are uploaded via the admin interface
+2. **Async Processing**: Celery processes documents in the background
+3. **Chunking**: Documents are split into manageable chunks
+4. **Embedding**: Chunks are converted to vector embeddings using sentence-transformers
+5. **Storage**: Embeddings are stored in ChromaDB vector database
+6. **Retrieval**: When querying, relevant chunks are retrieved based on similarity
+7. **Generation**: LLM generates responses using retrieved context
+
+### Supported Document Types
+- ✅ **PDF** (currently supported)
+- 🔄 **Confluence** (planned)
+- 🔄 **Jira** (planned)
+- 🔄 **SharePoint** (planned)
+
+### Vector Database
+- **ChromaDB** - Persistent vector database
+- **Embedding Model**: `sentence-transformers/all-MiniLM-L6-v2`
+- **Chunk Size**: 1000 characters with 200 character overlap
+
+## 🔑 GitHub Token Setup
 
 1. Go to GitHub Settings → Developer settings → Personal access tokens
 2. Generate a new token with the following scopes:
@@ -114,20 +188,7 @@ The frontend will be available at `http://localhost:3000`
    - `read:user` (for user information)
 3. Copy the token and add it to your `.env` file
 
-## Usage
-
-1. Open the application in your browser at `http://localhost:3000`
-2. Click "New chat" to start a conversation
-3. Type your message and press Enter or click Send
-4. View conversation history in the sidebar
-5. Click on any conversation to continue it
-6. Delete conversations using the delete button
-
-## System Prompt
-
-The application uses a very concise system prompt as requested: "Be very concise in your responses."
-
-## Development
+## 🛠️ Development
 
 ### Backend Development
 ```bash
@@ -141,6 +202,12 @@ cd frontend
 npm start
 ```
 
+### Celery Worker
+```bash
+cd backend
+celery -A chat_app worker --loglevel=info
+```
+
 ### Running Tests
 ```bash
 # Backend tests
@@ -152,13 +219,30 @@ cd frontend
 npm test
 ```
 
-## Deployment
+## 📊 Monitoring
+
+### RAG Statistics
+- Total data sources
+- Active sources
+- Total document chunks
+- Total tokens processed
+- Processing status
+
+### Performance Metrics
+- Retrieval time
+- Generation time
+- Token usage
+- Query history
+
+## 🚀 Deployment
 
 ### Backend Deployment
 1. Set `DEBUG=False` in production
 2. Use a production database (PostgreSQL recommended)
 3. Configure static files serving
 4. Set up proper CORS settings
+5. Configure Redis for Celery
+6. Set up proper logging
 
 ### Frontend Deployment
 ```bash
@@ -166,7 +250,7 @@ cd frontend
 npm run build
 ```
 
-## Contributing
+## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch
@@ -174,6 +258,18 @@ npm run build
 4. Add tests if applicable
 5. Submit a pull request
 
-## License
+## 📝 License
 
 This project is licensed under the MIT License.
+
+## 🔮 Future Enhancements
+
+- [ ] Confluence integration
+- [ ] Jira integration  
+- [ ] SharePoint integration
+- [ ] Advanced document preprocessing
+- [ ] Multi-language support
+- [ ] Advanced analytics dashboard
+- [ ] User authentication and permissions
+- [ ] API rate limiting
+- [ ] Document versioning
