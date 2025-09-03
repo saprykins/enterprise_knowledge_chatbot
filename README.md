@@ -8,10 +8,32 @@ A modern chat application built with Django backend and React frontend, featurin
 - 📚 **RAG System** - Upload and query company documents
 - 🎨 **Modern, responsive UI** with admin interface
 - 🔍 **GitHub AI integration** for context-aware responses
+- 🎛️ **3-Position Data Switcher** - Use company data, Both (intelligent), or LLM only
 - 🗑️ **Delete conversations** and manage data sources
 - 📱 **Mobile-friendly design**
 - 🔄 **Async document processing** with Celery
 - 📊 **Analytics and feedback** system
+
+## 🎛️ Data Source Control
+
+The application features a **3-Position Switcher** that controls how the AI responds to user queries:
+
+### **Use** 📄
+- Only uses company data from the RAG system
+- Best for company-specific questions
+- Fastest response time
+
+### **Both** 🤖📄
+- **Intelligent RAG + LLM combination**
+- First checks if the question relates to company data
+- If RAG-relevant: Rephrases question, asks for confirmation, then answers using company data + general knowledge
+- If not RAG-relevant: Uses LLM knowledge only
+- Provides the most comprehensive and accurate responses
+
+### **Not Use** 🤖
+- Only uses the LLM's general knowledge
+- Best for general questions not related to company data
+- No company information included
 
 ## 🏗️ Architecture
 

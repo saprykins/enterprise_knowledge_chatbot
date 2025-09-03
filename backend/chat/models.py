@@ -8,7 +8,16 @@ class Conversation(models.Model):
     title = models.CharField(max_length=255, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
-    use_company_data = models.BooleanField(default=False)
+    USE_COMPANY_DATA_CHOICES = [
+        ('use', 'Use'),
+        ('both', 'Both'),
+        ('not_use', 'Not Use'),
+    ]
+    use_company_data = models.CharField(
+        max_length=10, 
+        choices=USE_COMPANY_DATA_CHOICES, 
+        default='not_use'
+    )
 
     def __str__(self):
         return self.title or f"Conversation {self.id}"

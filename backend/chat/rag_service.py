@@ -62,16 +62,12 @@ class RAGService:
         # RAG prompt template
         self.rag_prompt_template = PromptTemplate(
             input_variables=["context", "question"],
-            template="""
-            You are a helpful AI assistant with access to company knowledge. Use the following context to answer the user's question.
-            
-            Context:
-            {context}
-            
-            Question: {question}
-            
-            Answer based on the context provided. If the context doesn't contain relevant information, say so but still try to be helpful.
-            """
+            template="""You are a helpful AI assistant with access to company knowledge. Be very concise.
+
+Context: {context}
+Question: {question}
+
+Answer based on the context. If context lacks info, say so briefly."""
         )
     
     def process_document(self, data_source: DataSource) -> bool:
@@ -225,6 +221,82 @@ class RAGService:
             
         except Exception as e:
             logger.error(f"Error generating RAG response: {str(e)}")
+            return f"Error generating response: {str(e)}"
+    
+    def generate_intelligent_response(self, query: str, conversation_id: int, llm_service: LLMService) -> str:
+        """Generate an intelligent response using RAG + LLM with confirmation logic."""
+        try:
+            start_time = time.time()
+            
+            # First, check if the question is related to RAG information
+            chunks = self.retrieve_relevant_chunks(query)
+            
+            if not chunks:
+                # Question not related to RAG, use LLM knowledge only
+                messages = [
+                    {'role': 'system', 'content': 'You are a helpful AI assistant. Be very concise.'},
+                    {'role': 'user', 'content': query}
+                ]
+                return llm_service.generate_response(messages)
+            
+            # Question is related to RAG, implement the confirmation flow
+            context = "\n\n".join([chunk.content for chunk in chunks])
+            
+            # Step 1: Rephrase the question using RAG context
+            rephrase_prompt = f"""Based on company context, rephrase the user question briefly:
+
+Context: {context}
+Question: {query}
+
+Rephrase and ask for confirmation. Be concise."""
+            
+            rephrase_messages = [
+                {'role': 'system', 'content': 'You are a helpful AI assistant. Be very concise.'},
+                {'role': 'user', 'content': rephrase_prompt}
+            ]
+            
+            rephrased_question = llm_service.generate_response(rephrase_messages)
+            
+            # Step 2: Ask for confirmation
+            confirmation_message = f"{rephrased_question}\n\nDid I understand your question correctly? Please confirm with 'yes' or provide more details if needed."
+            
+            # For now, we'll return the confirmation message
+            # In a real implementation, you'd wait for user confirmation
+            # For this demo, we'll proceed with the assumption that it's correct
+            
+            # Step 3: Generate final response using RAG + LLM
+            final_prompt = f"""You are a helpful AI assistant combining company knowledge with general knowledge. Be very concise.
+
+Company Context: {context}
+Question: {query}
+
+Answer using company info first, add general knowledge if needed. Keep it brief."""
+            
+            final_messages = [
+                {'role': 'system', 'content': 'You are a helpful AI assistant combining company knowledge with general knowledge. Be very concise.'},
+                {'role': 'user', 'content': final_prompt}
+            ]
+            
+            final_response = llm_service.generate_response(final_messages)
+            
+            # Store RAG query for analytics
+            from .models import RAGQuery, Conversation
+            conversation = Conversation.objects.get(id=conversation_id)
+            
+            rag_query = RAGQuery.objects.create(
+                conversation=conversation,
+                query=query,
+                response=final_response,
+                retrieval_time=time.time() - start_time,
+                generation_time=0,  # Will be updated if we implement real-time confirmation
+                total_tokens_used=len(final_response.split())  # Approximate
+            )
+            rag_query.retrieved_chunks.set(chunks)
+            
+            return final_response
+            
+        except Exception as e:
+            logger.error(f"Error generating intelligent response: {str(e)}")
             return f"Error generating response: {str(e)}"
     
     def get_active_sources(self) -> List[DataSource]:

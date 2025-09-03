@@ -25,7 +25,7 @@ class LLMService:
             'Accept': 'application/vnd.github.v3+json'
         } if self.github_token else {}
         
-        self.system_prompt = "You are a helpful AI assistant. Be very concise in your responses. You can access GitHub data for context when relevant."
+        self.system_prompt = "You are a helpful AI assistant. Be very concise in your responses."
     
     def generate_response(self, messages: List[Dict[str, str]]) -> str:
         """Generate a response using GitHub AI models."""
@@ -37,21 +37,7 @@ class LLMService:
             if not messages or messages[0].get('role') != 'system':
                 messages.insert(0, {'role': 'system', 'content': self.system_prompt})
             
-            # Get GitHub context if available and relevant
-            last_user_message = None
-            for msg in reversed(messages):
-                if msg.get('role') == 'user':
-                    last_user_message = msg['content']
-                    break
-            
-            if last_user_message:
-                github_context = self._get_github_context(last_user_message)
-                if github_context:
-                    # Add GitHub context to the conversation
-                    messages.insert(1, {
-                        'role': 'system', 
-                        'content': f"GitHub context: {github_context}"
-                    })
+            # No GitHub context needed - removed for simplicity
             
             # Prepare the request payload
             payload = {

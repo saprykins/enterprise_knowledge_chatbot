@@ -9,7 +9,7 @@ function App() {
   const [currentConversation, setCurrentConversation] = useState(null);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
-  const [useCompanyData, setUseCompanyData] = useState(false);
+  const [useCompanyData, setUseCompanyData] = useState('Use');
   const [currentPage, setCurrentPage] = useState('chat'); // 'chat' or 'admin'
   const [dataSources, setDataSources] = useState([]);
   const [ragStats, setRagStats] = useState({});
@@ -91,7 +91,7 @@ function App() {
         // Create new conversation
         response = await axios.post(`${API_BASE_URL}/conversations/`, {
           message: messageToSend,
-          use_company_data: useCompanyData
+          use_company_data: useCompanyData === 'Use' ? true : (useCompanyData === 'Both' ? 'both' : false)
         });
         setCurrentConversation(response.data);
         await fetchConversations(); // Refresh conversation list
@@ -349,15 +349,27 @@ function App() {
         {currentPage === 'chat' && (
           <>
             <div className="company-data-toggle">
-              <label className="toggle-switch">
-                <input
-                  type="checkbox"
-                  checked={useCompanyData}
-                  onChange={(e) => setUseCompanyData(e.target.checked)}
-                />
-                <span className="slider"></span>
-              </label>
-              <span>Use company data</span>
+              <div className="toggle-label">Use company data?</div>
+              <div className="three-position-switcher">
+                <button
+                  className={`switcher-option ${useCompanyData === 'Use' ? 'active' : ''}`}
+                  onClick={() => setUseCompanyData('Use')}
+                >
+                  Use
+                </button>
+                <button
+                  className={`switcher-option ${useCompanyData === 'Both' ? 'active' : ''}`}
+                  onClick={() => setUseCompanyData('Both')}
+                >
+                  Both
+                </button>
+                <button
+                  className={`switcher-option ${useCompanyData === 'Not Use' ? 'active' : ''}`}
+                  onClick={() => setUseCompanyData('Not Use')}
+                >
+                  Not Use
+                </button>
+              </div>
             </div>
             
             <div className="conversations-section">
@@ -372,7 +384,8 @@ function App() {
                 >
                   <div className="conversation-title">
                     {conversation.title}
-                    {conversation.use_company_data && <span className="rag-indicator">📄</span>}
+                    {conversation.use_company_data === 'use' && <span className="rag-indicator">📄</span>}
+                    {conversation.use_company_data === 'both' && <span className="rag-indicator">🤖📄</span>}
                   </div>
                   <div className="conversation-meta">
                     {conversation.message_count} messages • {formatTime(conversation.updated_at)}
@@ -402,7 +415,8 @@ function App() {
             <div className="chat-header">
               <h1 className="chat-title">
                 {currentConversation.title}
-                {currentConversation.use_company_data && <span className="rag-indicator">📄</span>}
+                {currentConversation.use_company_data === 'use' && <span className="rag-indicator">📄</span>}
+                {currentConversation.use_company_data === 'both' && <span className="rag-indicator">🤖📄</span>}
               </h1>
             </div>
             
@@ -433,8 +447,14 @@ function App() {
           <div className="empty-state">
             <h2>What can I help with?</h2>
             <p>Start a new conversation to begin chatting</p>
-            {useCompanyData && (
+            {useCompanyData === 'Use' && (
               <p className="rag-notice">📄 Company data will be used for responses</p>
+            )}
+            {useCompanyData === 'Both' && (
+              <p className="rag-notice">📄 Company data + LLM knowledge will be used intelligently</p>
+            )}
+            {useCompanyData === 'Not Use' && (
+              <p className="rag-notice">🤖 Only LLM knowledge will be used</p>
             )}
           </div>
         )}

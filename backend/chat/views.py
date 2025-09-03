@@ -57,16 +57,24 @@ def conversation_list(request):
         conversation.title = title
         conversation.save()
         
-        # Generate assistant response
-        if conversation.use_company_data:
-            # Use RAG for company data
+        # Generate assistant response based on company data setting
+        if conversation.use_company_data == 'use':
+            # Use RAG for company data only
             rag_service = RAGService()
             assistant_response = rag_service.generate_rag_response(
                 user_message.content, 
                 conversation.id
             )
+        elif conversation.use_company_data == 'both':
+            # Use intelligent RAG + LLM combination
+            rag_service = RAGService()
+            assistant_response = rag_service.generate_intelligent_response(
+                user_message.content, 
+                conversation.id,
+                llm_service
+            )
         else:
-            # Use regular LLM
+            # Use regular LLM only
             messages_for_llm = [
                 {'role': msg.role, 'content': msg.content}
                 for msg in conversation.messages.all()
@@ -101,16 +109,25 @@ def conversation_detail(request, conversation_id):
             content=request.data.get('message', '')
         )
         
-        # Generate assistant response
-        if conversation.use_company_data:
-            # Use RAG for company data
+        # Generate assistant response based on company data setting
+        if conversation.use_company_data == 'use':
+            # Use RAG for company data only
             rag_service = RAGService()
             assistant_response = rag_service.generate_rag_response(
                 user_message.content, 
                 conversation.id
             )
+        elif conversation.use_company_data == 'both':
+            # Use intelligent RAG + LLM combination
+            rag_service = RAGService()
+            llm_service = LLMService()
+            assistant_response = rag_service.generate_intelligent_response(
+                user_message.content, 
+                conversation.id,
+                llm_service
+            )
         else:
-            # Use regular LLM
+            # Use regular LLM only
             llm_service = LLMService()
             messages_for_llm = [
                 {'role': msg.role, 'content': msg.content}
