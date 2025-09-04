@@ -14,7 +14,6 @@ function App() {
   const [dataSources, setDataSources] = useState([]);
   const [ragStats, setRagStats] = useState({});
   const [uploadingFile, setUploadingFile] = useState(false);
-  const [conversationStarted, setConversationStarted] = useState(false);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -31,25 +30,6 @@ function App() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [currentConversation]);
-
-  // Update conversation started state when current conversation changes
-  useEffect(() => {
-    if (currentConversation && currentConversation.messages) {
-      const hasAssistantMessages = currentConversation.messages.some(msg => msg.role === 'assistant');
-      setConversationStarted(hasAssistantMessages);
-      
-      // Set switch position based on conversation's use_company_data
-      if (currentConversation.use_company_data === 'use') {
-        setUseCompanyData('use_only_internal');
-      } else if (currentConversation.use_company_data === 'both') {
-        setUseCompanyData('use_internal_and_public');
-      } else {
-        setUseCompanyData('use_only_public');
-      }
-    } else {
-      setConversationStarted(false);
-    }
   }, [currentConversation]);
 
   const fetchConversations = async () => {
@@ -97,8 +77,6 @@ function App() {
   const createNewChat = () => {
     setCurrentConversation(null);
     setMessage('');
-    setConversationStarted(false);
-    setUseCompanyData('use_only_internal'); // Reset to default
   };
 
   const selectConversation = (conversation) => {
@@ -247,17 +225,6 @@ function App() {
     }
   };
 
-  // Get background color based on current mode
-  const getBackgroundColor = () => {
-    if (useCompanyData === 'use_only_internal') {
-      return '#ADD8E6'; // Light Blue
-    } else if (useCompanyData === 'use_internal_and_public') {
-      return '#90EE90'; // Light Green
-    } else {
-      return '#FFFFE0'; // Light Yellow
-    }
-  };
-
   const FeedbackButtons = ({ message }) => {
     if (!message || message.role !== 'assistant') return null;
 
@@ -380,7 +347,7 @@ function App() {
   );
 
   return (
-    <div className="app" style={{ backgroundColor: getBackgroundColor() }}>
+    <div className="app">
       {/* Sidebar */}
       <div className="sidebar">
         <div className="sidebar-header">
@@ -399,25 +366,22 @@ function App() {
           <>
             <div className="company-data-toggle">
               <div className="toggle-label">Data Source</div>
-              <div className={`three-position-switcher ${conversationStarted ? 'disabled' : ''}`}>
+              <div className="three-position-switcher">
                 <button
                   className={`switcher-option ${useCompanyData === 'use_only_internal' ? 'active' : ''}`}
-                  onClick={() => !conversationStarted && setUseCompanyData('use_only_internal')}
-                  disabled={conversationStarted}
+                  onClick={() => setUseCompanyData('use_only_internal')}
                 >
                   Internal Only
                 </button>
                 <button
                   className={`switcher-option ${useCompanyData === 'use_internal_and_public' ? 'active' : ''}`}
-                  onClick={() => !conversationStarted && setUseCompanyData('use_internal_and_public')}
-                  disabled={conversationStarted}
+                  onClick={() => setUseCompanyData('use_internal_and_public')}
                 >
                   Internal + Public
                 </button>
                 <button
                   className={`switcher-option ${useCompanyData === 'use_only_public' ? 'active' : ''}`}
-                  onClick={() => !conversationStarted && setUseCompanyData('use_only_public')}
-                  disabled={conversationStarted}
+                  onClick={() => setUseCompanyData('use_only_public')}
                 >
                   Public Only
                 </button>
@@ -492,11 +456,8 @@ function App() {
                 <div className="message assistant">
                   <div className="message-content">
                     <div className="loading">
-                      <div className="pulsating-dots">
-                        <span></span>
-                        <span></span>
-                        <span></span>
-                      </div>
+                      <div className="spinner"></div>
+                      Thinking...
                     </div>
                   </div>
                 </div>
