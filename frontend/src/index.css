@@ -227,6 +227,13 @@ input:checked + .slider:before {
   font-weight: 500;
 }
 
+.no-messages {
+  padding: 40px 20px;
+  text-align: center;
+  color: #6c757d;
+  font-style: italic;
+}
+
 .main-content {
   flex: 1;
   display: flex;

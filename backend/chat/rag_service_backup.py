@@ -243,6 +243,27 @@ Answer based on the context. If context lacks info, say so briefly."""
             context = "\n\n".join([chunk.content for chunk in chunks])
             
             # Generate response using RAG context with LLM fallback
+
+Context: {context}
+Question: {query}
+
+Rephrase and ask for confirmation. Be concise."""
+            
+            rephrase_messages = [
+                {'role': 'system', 'content': 'You are a helpful AI assistant. Be very concise.'},
+                {'role': 'user', 'content': rephrase_prompt}
+            ]
+            
+            rephrased_question = llm_service.generate_response(rephrase_messages)
+            
+            # Step 2: Ask for confirmation
+            confirmation_message = f"{rephrased_question}\n\nDid I understand your question correctly? Please confirm with 'yes' or provide more details if needed."
+            
+            # For now, we'll return the confirmation message
+            # In a real implementation, you'd wait for user confirmation
+            # For this demo, we'll proceed with the assumption that it's correct
+            
+            # Step 3: Generate final response using RAG + LLM
             final_prompt = f"""You are a helpful AI assistant combining company knowledge with general knowledge. Be very concise.
 
 Company Context: {context}
@@ -266,7 +287,7 @@ Answer using company info first, add general knowledge if needed. Keep it brief.
                 query=query,
                 response=final_response,
                 retrieval_time=time.time() - start_time,
-                generation_time=0,
+                generation_time=0,  # Will be updated if we implement real-time confirmation
                 total_tokens_used=len(final_response.split())  # Approximate
             )
             rag_query.retrieved_chunks.set(chunks)

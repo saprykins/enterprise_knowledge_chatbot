@@ -9,7 +9,7 @@ function App() {
   const [currentConversation, setCurrentConversation] = useState(null);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
-  const [useCompanyData, setUseCompanyData] = useState('Use');
+  const [useCompanyData, setUseCompanyData] = useState('use_only_internal');
   const [currentPage, setCurrentPage] = useState('chat'); // 'chat' or 'admin'
   const [dataSources, setDataSources] = useState([]);
   const [ragStats, setRagStats] = useState({});
@@ -44,9 +44,15 @@ function App() {
   const fetchConversation = async (conversationId) => {
     try {
       const response = await axios.get(`${API_BASE_URL}/conversations/${conversationId}/`);
-      setCurrentConversation(response.data);
+      if (response.data) {
+        setCurrentConversation(response.data);
+      } else {
+        console.error('No data received from conversation API');
+        setCurrentConversation(null);
+      }
     } catch (error) {
       console.error('Error fetching conversation:', error);
+      setCurrentConversation(null);
     }
   };
 
@@ -74,8 +80,12 @@ function App() {
   };
 
   const selectConversation = (conversation) => {
-    setCurrentConversation(conversation);
-    fetchConversation(conversation.id);
+    try {
+      setCurrentConversation(conversation);
+      fetchConversation(conversation.id);
+    } catch (error) {
+      console.error('Error selecting conversation:', error);
+    }
   };
 
   const sendMessage = async () => {
@@ -91,7 +101,7 @@ function App() {
         // Create new conversation
         response = await axios.post(`${API_BASE_URL}/conversations/`, {
           message: messageToSend,
-          use_company_data: useCompanyData === 'Use' ? true : (useCompanyData === 'Both' ? 'both' : false)
+          use_company_data: useCompanyData === 'use_only_internal' ? 'use' : (useCompanyData === 'use_internal_and_public' ? 'both' : 'not_use')
         });
         setCurrentConversation(response.data);
         await fetchConversations(); // Refresh conversation list
@@ -203,14 +213,20 @@ function App() {
   };
 
   const formatTime = (timestamp) => {
-    return new Date(timestamp).toLocaleTimeString([], { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
+    try {
+      if (!timestamp) return 'Unknown time';
+      return new Date(timestamp).toLocaleTimeString([], { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
+    } catch (error) {
+      console.error('Error formatting time:', error);
+      return 'Invalid time';
+    }
   };
 
   const FeedbackButtons = ({ message }) => {
-    if (message.role !== 'assistant') return null;
+    if (!message || message.role !== 'assistant') return null;
 
     return (
       <div className="feedback-buttons">
@@ -349,25 +365,25 @@ function App() {
         {currentPage === 'chat' && (
           <>
             <div className="company-data-toggle">
-              <div className="toggle-label">Use company data?</div>
+              <div className="toggle-label">Data Source</div>
               <div className="three-position-switcher">
                 <button
-                  className={`switcher-option ${useCompanyData === 'Use' ? 'active' : ''}`}
-                  onClick={() => setUseCompanyData('Use')}
+                  className={`switcher-option ${useCompanyData === 'use_only_internal' ? 'active' : ''}`}
+                  onClick={() => setUseCompanyData('use_only_internal')}
                 >
-                  Use
+                  Internal Only
                 </button>
                 <button
-                  className={`switcher-option ${useCompanyData === 'Both' ? 'active' : ''}`}
-                  onClick={() => setUseCompanyData('Both')}
+                  className={`switcher-option ${useCompanyData === 'use_internal_and_public' ? 'active' : ''}`}
+                  onClick={() => setUseCompanyData('use_internal_and_public')}
                 >
-                  Both
+                  Internal + Public
                 </button>
                 <button
-                  className={`switcher-option ${useCompanyData === 'Not Use' ? 'active' : ''}`}
-                  onClick={() => setUseCompanyData('Not Use')}
+                  className={`switcher-option ${useCompanyData === 'use_only_public' ? 'active' : ''}`}
+                  onClick={() => setUseCompanyData('use_only_public')}
                 >
-                  Not Use
+                  Public Only
                 </button>
               </div>
             </div>
@@ -384,8 +400,8 @@ function App() {
                 >
                   <div className="conversation-title">
                     {conversation.title}
-                    {conversation.use_company_data === 'use' && <span className="rag-indicator">📄</span>}
-                    {conversation.use_company_data === 'both' && <span className="rag-indicator">🤖📄</span>}
+                    {(conversation.use_company_data === 'use' || conversation.use_company_data === true || conversation.use_company_data === 'True') && <span className="rag-indicator">📄</span>}
+                    {(conversation.use_company_data === 'both') && <span className="rag-indicator">🤖📄</span>}
                   </div>
                   <div className="conversation-meta">
                     {conversation.message_count} messages • {formatTime(conversation.updated_at)}
@@ -414,22 +430,28 @@ function App() {
           <>
             <div className="chat-header">
               <h1 className="chat-title">
-                {currentConversation.title}
-                {currentConversation.use_company_data === 'use' && <span className="rag-indicator">📄</span>}
-                {currentConversation.use_company_data === 'both' && <span className="rag-indicator">🤖📄</span>}
+                {currentConversation.title || 'Untitled Conversation'}
+                {(currentConversation.use_company_data === 'use' || currentConversation.use_company_data === true || currentConversation.use_company_data === 'True') && <span className="rag-indicator">📄</span>}
+                {(currentConversation.use_company_data === 'both') && <span className="rag-indicator">🤖📄</span>}
               </h1>
             </div>
             
             <div className="chat-messages">
-              {currentConversation.messages.map((msg) => (
-                <div key={msg.id} className={`message ${msg.role}`}>
-                  <div className="message-content">
-                    {msg.content}
-                    <div className="message-time">{formatTime(msg.created_at)}</div>
-                    <FeedbackButtons message={msg} />
+              {currentConversation.messages && currentConversation.messages.length > 0 ? (
+                currentConversation.messages.map((msg) => (
+                  <div key={msg.id} className={`message ${msg.role}`}>
+                    <div className="message-content">
+                      {msg.content}
+                      <div className="message-time">{formatTime(msg.created_at)}</div>
+                      <FeedbackButtons message={msg} />
+                    </div>
                   </div>
+                ))
+              ) : (
+                <div className="no-messages">
+                  <p>No messages found in this conversation.</p>
                 </div>
-              ))}
+              )}
               {loading && (
                 <div className="message assistant">
                   <div className="message-content">
@@ -447,14 +469,14 @@ function App() {
           <div className="empty-state">
             <h2>What can I help with?</h2>
             <p>Start a new conversation to begin chatting</p>
-            {useCompanyData === 'Use' && (
-              <p className="rag-notice">📄 Company data will be used for responses</p>
+            {useCompanyData === 'use_only_internal' && (
+              <p className="rag-notice">📄 Only internal company data will be used (no hallucination)</p>
             )}
-            {useCompanyData === 'Both' && (
-              <p className="rag-notice">📄 Company data + LLM knowledge will be used intelligently</p>
+            {useCompanyData === 'use_internal_and_public' && (
+              <p className="rag-notice">📄 Internal data prioritized, public knowledge as fallback</p>
             )}
-            {useCompanyData === 'Not Use' && (
-              <p className="rag-notice">🤖 Only LLM knowledge will be used</p>
+            {useCompanyData === 'use_only_public' && (
+              <p className="rag-notice">🤖 Only public LLM knowledge will be used</p>
             )}
           </div>
         )}
