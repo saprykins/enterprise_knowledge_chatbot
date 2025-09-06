@@ -73,6 +73,98 @@ The application features a **3-Position Switcher** that controls how the AI resp
 - **Axios** - HTTP client
 - **CSS3** - Modern styling
 
+### System Architecture Diagram
+
+```mermaid
+graph TB
+    %% User Interface Layer
+    subgraph "🖥️ Frontend Layer"
+        UI[React UI<br/>Port 3000]
+        Admin[Admin Interface<br/>Document Upload]
+    end
+    
+    %% API Gateway
+    subgraph "🌐 API Layer"
+        API[Django REST API<br/>Port 8000]
+    end
+    
+    %% Core Application Logic
+    subgraph "🧠 Application Layer"
+        Views[Django Views<br/>Request Handling]
+        RAG[RAG Service<br/>LangChain Integration]
+        LLM[LLM Service<br/>GitHub AI]
+    end
+    
+    %% Data Processing
+    subgraph "⚙️ Processing Layer"
+        Celery[Celery Worker<br/>Async Tasks]
+        Redis[Redis<br/>Task Queue]
+    end
+    
+    %% Data Storage
+    subgraph "💾 Data Layer"
+        SQLite[(SQLite<br/>Conversations & Metadata)]
+        ChromaDB[(ChromaDB<br/>Vector Database)]
+        Files[File Storage<br/>PDF Documents]
+    end
+    
+    %% External Services
+    subgraph "☁️ External Services"
+        GitHub[GitHub AI<br/>LLM Provider]
+        Embeddings[Sentence Transformers<br/>Embedding Model]
+    end
+    
+    %% User Interactions
+    UI --> API
+    Admin --> API
+    
+    %% API to Application
+    API --> Views
+    Views --> RAG
+    Views --> LLM
+    
+    %% RAG Processing Flow
+    RAG --> ChromaDB
+    RAG --> Embeddings
+    RAG --> LLM
+    
+    %% Async Processing
+    Views --> Celery
+    Celery --> Redis
+    Celery --> Files
+    Celery --> ChromaDB
+    
+    %% Data Persistence
+    Views --> SQLite
+    RAG --> SQLite
+    
+    %% External API Calls
+    LLM --> GitHub
+    
+    %% Styling
+    classDef frontend fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    classDef api fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    classDef app fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px
+    classDef process fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    classDef data fill:#fce4ec,stroke:#880e4f,stroke-width:2px
+    classDef external fill:#f1f8e9,stroke:#33691e,stroke-width:2px
+    
+    class UI,Admin frontend
+    class API api
+    class Views,RAG,LLM app
+    class Celery,Redis process
+    class SQLite,ChromaDB,Files data
+    class GitHub,Embeddings external
+```
+
+**Architecture Flow:**
+1. **User Interface**: React frontend with admin panel for document management
+2. **API Gateway**: Django REST API handles all HTTP requests
+3. **Application Logic**: Views orchestrate RAG and LLM services
+4. **Async Processing**: Celery processes documents in background
+5. **Data Storage**: SQLite for metadata, ChromaDB for vectors, file system for PDFs
+6. **External Services**: GitHub AI for LLM, Sentence Transformers for embeddings
+
 ## 📋 Setup Instructions
 
 ### Prerequisites
