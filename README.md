@@ -1,8 +1,27 @@
-![A quick demo of the app in action](assets/rag-intro-import-choose-context-20.gif)
-  
-![A quick demo of the app in action](assets/rag_modes_comparison-15.gif)
-
 # Chat Application with RAG (Retrieval-Augmented Generation)
+
+## 🎬 Quick Demo
+
+### 📚 **Knowledge Import & Data Source Selection**
+*Watch how to upload company documents and configure the intelligent 3-position data switcher*
+
+![RAG Setup Demo](assets/rag-intro-import-choose-context-20.gif)
+
+See the complete workflow: Upload PDFs through the admin interface → Configure data sources → Select between **Internal Only** (company data), **Internal + Public** (hybrid intelligence), or **Public Only** (general knowledge) modes.
+
+---
+
+### 🎛️ **Data Source Modes in Action**
+*Experience the power of different AI response modes with real-time comparisons*
+
+![Data Modes Comparison](assets/rag_modes_comparison-15.gif)
+
+Compare how the same question gets different responses based on your data source selection:
+- 🔵 **Internal Only**: Strict company knowledge, no hallucination
+- 🟢 **Internal + Public**: Smart hybrid with RAG priority + LLM fallback  
+- 🟡 **Public Only**: Pure LLM knowledge without company context
+
+---
 
 A modern chat application built with Django backend and React frontend, featuring conversation history, GitHub AI integration, and **RAG (Retrieval-Augmented Generation)** for company knowledge management.
 
