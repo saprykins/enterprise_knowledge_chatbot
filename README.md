@@ -1,6 +1,6 @@
 ![A quick demo of the app in action](assets/rag-intro-import-choose-context-20.gif)
-
-
+  
+![A quick demo of the app in action](assets/rag_modes_comparison-15.gif)
 
 # Chat Application with RAG (Retrieval-Augmented Generation)
 
