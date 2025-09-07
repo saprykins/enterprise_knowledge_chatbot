@@ -23,6 +23,29 @@ Compare how the same question gets different responses based on your data source
 
 ---
 
+## What This App Solves
+
+This app addresses several key challenges in enterprise knowledge management and communication, offering a solution that is tailored, secure, and adaptable.
+
+### The Problem
+
+Traditional GPT-like models are limited to publicly available information, making them ineffective for answering questions about company-specific context, such as internal processes, proprietary knowledge, or domain-specific vocabulary. While existing RAG (Retrieval-Augmented Generation) solutions can incorporate internal knowledge bases, they're often rigid. If information isn't in the provided knowledge base, the chat simply can't help. This also creates another problem: multiple, disparate internal sources of information that are difficult to navigate and search simultaneously.
+
+### Our Solution
+
+Our app provides a flexible and secure solution to these problems. It gives users granular control over their queries, allowing them to choose whether to search internal knowledge bases, public data, or both. This is especially useful for targeting specific information, like HR or financial documentation. The solution is also designed with security in mind: all data processing, including knowledge storage and embedding, can be done on your local server, ensuring that sensitive information remains within your environment.
+
+Furthermore, this app is designed to improve documentation quality over time. Through an administrator interface, negative user feedback on chat replies can be used to identify "blind spots" in your documentation. The administrator interface also provides insights into user interests based on their search history, helping you understand what information your teams need most.
+
+### Future Improvements
+
+- **Scalable and high-performance databases**: Integrating more robust vector and relational databases
+- **Table processing**: The ability to read and understand information from tables
+- **API comparisons**: Testing performance with various APIs
+- **Multi-modal analysis**: Using multi-modal models to suggest documentation improvements by analyzing schemes and images
+
+---
+
 A modern chat application built with Django backend and React frontend, featuring conversation history, GitHub AI integration, and **RAG (Retrieval-Augmented Generation)** for company knowledge management.
 
 ## 🚀 Features
@@ -401,12 +424,21 @@ This project is licensed under the MIT License.
 
 ## 🔮 Future Enhancements
 
+### Platform Integrations
 - [ ] Confluence integration
 - [ ] Jira integration  
 - [ ] SharePoint integration
+
+### Advanced Features
 - [ ] Advanced document preprocessing
 - [ ] Multi-language support
 - [ ] Advanced analytics dashboard
 - [ ] User authentication and permissions
 - [ ] API rate limiting
 - [ ] Document versioning
+
+### Performance & Scalability
+- [ ] Scalable and high-performance databases
+- [ ] Table processing capabilities
+- [ ] API performance comparisons
+- [ ] Multi-modal analysis for documentation improvement
