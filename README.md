@@ -12,7 +12,7 @@ See the complete workflow: Upload PDFs through the admin interface → Configure
 ---
 
 ### 🎛️ **Data Source Modes in Action**
-*Experience the power of different AI response modes with real-time comparisons*
+*Experience the power of different AI response modes*
 
 ![Data Modes Comparison](assets/rag_modes_comparison-15.gif)
 
@@ -409,18 +409,6 @@ npm test
 cd frontend
 npm run build
 ```
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
-## 📝 License
-
-This project is licensed under the MIT License.
 
 ## 🔮 Future Enhancements
 
